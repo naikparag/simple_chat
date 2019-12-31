@@ -2,16 +2,146 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ChatJS</title>
-    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <style>
+        hr {
+            margin: 0.8rem 0;
+        }
+
+        #messages {
+            border: 1px;
+            padding: 10px;
+        }
+
+        .user_li {
+            font-size: 0.75rem;
+            color: gray;
+            margin-left: 10px;
+        }
+
+        .user_li.him {
+            /* float: left; */
+        }
+
+        .user_li.me {
+            /* float:right; */
+        }
+
+        .msg {
+            max-width: 85%;
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            line-height: 1rem;
+            min-height: 2rem;
+            font-size: 0.875rem;
+            border-radius: 0.2rem;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+            text-transform: capitalize;
+        }
+
+        .msg.him {
+            background-color: #3f74fe;
+            color: #fff;
+            border-bottom-left-radius: 0.125rem;
+            /* float: left; */
+        }
+
+        .msg.me {
+            background-color: gray;
+            color: #fff;
+            border-bottom-left-radius: 0.125rem;
+            /* float: right; */
+        }
+    </style>
+    <script src="/socket.io/socket.io.js" ”></script>
 </head>
 
 <body>
-    <div id="history"></div>
-    <form id="chat">
-        <input type="text" id="msg_text" name="msg_text" />
-        <input type="submit" value="Send!" />
-    </form>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">
+                Simple Chat
+            </h1>
+            <ul id='message_history'></ul>
+
+            <hr>
+            <div class="field has-addons">
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="msg_input" name="msg_input" placeholder="mew..">
+                </div>
+                <div class="control">
+                    <a class="button is-primary" id='send_button' onclick="sendMessage(document.getElementById('msg_input').value)">
+                        Send!
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 </body>
+
+<script type="text/javascript">
+    document.getElementById('msg_input').addEventListener('keypress', function (event) {
+        if (event.keyCode == 13) {
+            event.preventDefault();
+            sendMessage(document.getElementById('msg_input').value)
+        }
+    })
+
+    var socket = io.connect();
+
+    function sendMessage(message) {
+
+        if (!message) return false
+
+        uname = sessionStorage.getItem('uname')
+        console.log(uname + ' ' + message)
+        socket.emit('message', {
+            'uname': uname,
+            'message': message
+        })
+        msg_input = document.getElementById('msg_input')
+        msg_input.value = ''
+        msg_input.focus();
+        return false;
+    }
+
+    function addMessage(message) {
+        var text = document.createTextNode(message.message)
+        var user = document.createTextNode(message.uname)
+        el_text = document.createElement('li')
+        el_text.appendChild(text)
+
+        el_user = document.createElement('li')
+        
+        el_user.appendChild(user)
+
+        if (message.uname === sessionStorage.getItem('uname')) {
+            el_text.className = 'msg me'
+            el_user.className = 'user_li me'
+        } else {
+            el_text.className = 'msg him'
+            el_user.className = 'user_li him'
+        }
+
+        message_history = document.getElementById('message_history')
+        message_history.appendChild(el_user)
+        message_history.appendChild(el_text)
+    }
+
+    socket.on('message', function (data) {
+        addMessage(data);
+    })
+
+    socket.on('connected', function (data) {
+        sessionStorage.setItem('uname', data.uname)
+    })
+
+    socket.on('error', console.error.bind(console))
+</script>
 
 </html>
