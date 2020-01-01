@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ChatJS</title>
+    <title>Simple Chat</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <style>
         hr {
@@ -19,35 +19,36 @@
         }
 
         #send_button {
-            background-color:  #3f74fe;
+            background-color: #3f74fe;
             color: white;
             border-radius: 1px;
         }
 
-        .user_li {
-            font-size: 0.75rem;
-            color: gray;
-            margin: 2px;
+        .msg_container {
+            margin-bottom: .6rem;
+            padding: 0.2rem;
+            display: inline-block;
         }
 
         .msg {
-            max-width: 85%;
-            display: inline-block;
-            padding: 0.4rem 0.6rem;
+            padding: 0.2rem 0.6rem;
             line-height: 1rem;
-            min-height: 2rem;
-            font-size: 0.875rem;
-            border-radius: 0.2rem;
-            margin-bottom: 0.5rem;
+            min-height: 1rem;
+            font-size: 1rem;
+            transition: all 1s linear;
         }
 
-        .msg.him {
+        .msg_container.him {
             background-color: #3f74fe;
             color: #fff;
         }
 
-        .msg.me {
+        .msg_container.me {
             background-color: whitesmoke;
+        }
+
+        .msg.user {
+            font-size: 0.75rem !important;
         }
     </style>
     <script src="/socket.io/socket.io.js" ”></script>
@@ -62,7 +63,7 @@
             <ul id='message_history'></ul>
 
             <hr>
-            <div class="field has-addons">
+            <div id='input_container' class="field has-addons">
                 <div class="control is-expanded">
                     <input class="input" type="text" id="msg_input" name="msg_input" placeholder="mew..">
                 </div>
@@ -91,7 +92,6 @@
         if (!message) return false
 
         uname = sessionStorage.getItem('uname')
-        console.log(uname + ' ' + message)
         socket.emit('message', {
             'uname': uname,
             'message': message
@@ -102,27 +102,56 @@
         return false;
     }
 
-    function addMessage(message) {
-        var text = document.createTextNode(message.message)
-        var user = document.createTextNode(message.uname)
-        el_text = document.createElement('li')
-        el_text.appendChild(text)
+    function createPNode(text, className) {
+        var text = document.createTextNode(text)
+        var p_node = document.createElement('p')
+        p_node.appendChild(text)
+        p_node.className = className
+        return p_node
+    }
 
-        el_user = document.createElement('li')
-        
-        el_user.appendChild(user)
+    function isSameUserAsPrevious(message_history, current_user) {
+
+        if (!message_history.lastChild) {
+            return false
+        }
+
+        previous_user = message_history.lastChild.getElementsByClassName('user')[0].innerText
+        if (previous_user === current_user) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    function addMessage(message) {
+
+        messageClass = 'msg_container'
 
         if (message.uname === sessionStorage.getItem('uname')) {
-            el_text.className = 'msg me'
-            el_user.className = 'user_li me'
+            messageClass = messageClass + ' me'
         } else {
-            el_text.className = 'msg him'
-            el_user.className = 'user_li him'
+            messageClass = messageClass + ' him'
         }
 
         message_history = document.getElementById('message_history')
-        message_history.appendChild(el_user)
-        message_history.appendChild(el_text)
+        var li_el = document.createElement('li')
+        var msg_text = createPNode(message.message, 'msg')
+
+        if (isSameUserAsPrevious(message_history, message.uname)) {
+            msg_container = message_history.lastChild.firstElementChild
+            msg_container.appendChild(msg_text)
+            return
+        }
+
+        var msg_user = createPNode(message.uname, 'msg user')
+        var msg_container = document.createElement('div')
+
+        msg_container.className = messageClass
+        msg_container.appendChild(msg_user)
+        msg_container.appendChild(msg_text)
+        li_el.appendChild(msg_container)
+        message_history.appendChild(li_el)
     }
 
     socket.on('message', function (data) {
