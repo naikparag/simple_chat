@@ -38,7 +38,7 @@
             transition: all 1s linear;
         }
 
-        .msg_container.him {
+        .msg_container.notme {
             background-color: #3f74fe;
             color: #fff;
         }
@@ -131,7 +131,7 @@
         if (message.uname === sessionStorage.getItem('uname')) {
             messageClass = messageClass + ' me'
         } else {
-            messageClass = messageClass + ' him'
+            messageClass = messageClass + ' notme'
         }
 
         message_history = document.getElementById('message_history')
